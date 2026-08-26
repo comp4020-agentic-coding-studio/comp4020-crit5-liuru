@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>泡 · a bubble game</title>
     <meta
       name="description"
-      content="Replace this with one sentence saying what this page is. A search result and a link preview both show it."
+      content="Click the bubble before it's gone. Miss once and the round ends — how many can you catch?"
     />
 
     <!--
@@ -27,11 +27,13 @@
       </nav>
     </header>
     <main>
-      <h1>COMP4020 prototype</h1>
-      <p>
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
-      </p>
+      <h1>泡</h1>
+      <div id="stage">
+        <div id="score"></div>
+        <div id="best"></div>
+        <button id="bubble" type="button" aria-label="bubble"></button>
+        <div id="flash" aria-hidden="true"></div>
+      </div>
     </main>
     <script type="module" src="./main.ts"></script>
   </body>
