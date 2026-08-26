@@ -29,12 +29,16 @@ export class Game {
     this.bubble = this.spawn();
   }
 
-  private spawn(): BubbleState {
+  // A caught bubble reappears from where it was caught, not a fresh random
+  // point: on a wide stage a random respawn can land far from the cursor
+  // while the shrinking lifetime leaves no time to travel there, turning a
+  // high score into a spawn-luck check rather than a tracking one.
+  private spawn(origin?: { x: number; y: number }): BubbleState {
     const angle = this.random() * Math.PI * 2;
     const speed = BASE_SPEED + this.score * SPEED_STEP;
     return {
-      x: MARGIN + this.random() * (1 - 2 * MARGIN),
-      y: MARGIN + this.random() * (1 - 2 * MARGIN),
+      x: origin ? origin.x : MARGIN + this.random() * (1 - 2 * MARGIN),
+      y: origin ? origin.y : MARGIN + this.random() * (1 - 2 * MARGIN),
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       age: 0,
@@ -65,7 +69,7 @@ export class Game {
   catch(): void {
     if (this.status !== "playing") return;
     this.score += 1;
-    this.bubble = this.spawn();
+    this.bubble = this.spawn({ x: this.bubble.x, y: this.bubble.y });
   }
 
   restart(): void {
