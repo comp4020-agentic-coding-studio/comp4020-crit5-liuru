@@ -1,83 +1,80 @@
 # Hand-off
 
-## crit5-game: playtest-driven fix landed, still not the finishing run
+## crit5-game: honest playtest of the continuous-respawn build, no change warranted
 
-`comp4020-crit5-liuru`, 160.5h to cutoff at the top of this run --- still
-plan/build/deepen per doctrine, not finish. Continuing from the bubble game
-built last run (see git log for the full build).
+`comp4020-crit5-liuru`, 149.5h to cutoff at the top of this run --- still
+plan/build/deepen per doctrine, not finish. This run did the thing the last
+hand-off flagged as open: played the game again now that a caught bubble
+respawns from its own position (`db931ec`) instead of teleporting, and judged
+honestly whether the speed/lifetime ramp in `game.ts` still feels calibrated.
 
-This run did the one thing the previous hand-off flagged as still open: play
-the actual game and let that change something. Started the dev server,
-opened it in `agent-browser`, confirmed the tab really was mine, then played
-several ways --- rapid `el.click()` runs (never missed, proved nothing about
-difficulty since it has zero travel time), then real screen-coordinate
-clicks (missed constantly, because each `mouse move`/`mouse down`/`mouse up`
-step is its own CLI round-trip with more latency than a real hand). Neither
-extreme is a fair proxy for a human, and this is now written up in
-`MEMORY.md`. What actually surfaced a real problem was a plain screenshot of
-the 1920x1080 opening state plus doing the arithmetic: a caught bubble
-respawned at a fresh random point anywhere on a wide stage, while its
-lifetime kept shrinking with score --- at higher scores there wasn't enough
-time left to travel across the stage to a random spawn, so a high score
-depended on spawn-proximity luck rather than tracking skill. Fixed in
-`game.ts`'s `spawn()`: a caught bubble now continues from the position it
-was caught at (`catch()` passes `{x: this.bubble.x, y: this.bubble.y}` as
-the new one's origin) instead of teleporting; initial spawn and `restart()`
-still pick a fresh random point, since there's no "previous" position to
-continue from there. Confirmed with `eval` that a bubble's position is
-identical immediately before and after a catch. `pnpm check` stayed
-21/21 green throughout (the existing tests exercise score/status/best, not
-spawn position, so nothing needed updating).
+Hit the exact CLI-latency trap already documented in `MEMORY.md` on the first
+attempt: `open` → `set viewport` → `eval location.href` → `screenshot` took
+enough real wall-clock time that the very first bubble (2200ms lifetime) had
+already expired, so the first screenshot showed the post-miss flash overlay
+(a big "0"), not the opening state --- looked like a missing-bubble bug at
+first glance. Reloaded and screenshotted back-to-back with nothing in
+between and got the real opening state: a clearly visible glowing bubble,
+obvious affordance, at both marking viewports (1920x1080 and 390x844).
+Confirms the mechanic itself needs no fix; the near-miss was my own
+instrumentation lag, not the game's.
 
-Also closed the other open item: `public/card.png` was still the starter's
-"Replace this card" placeholder. Rendered a real one at the card's own
-1200x630 using the same background gradient and bubble glow as the live
-page (built as a standalone HTML file, screenshotted with `agent-browser`
-at that exact viewport, no scaling needed) and committed it over the
-placeholder.
+To inspect the high-score end of the ramp without fighting click-travel
+latency, drove the score up with `document.querySelector('#bubble').click()`
+(a direct DOM dispatch, zero travel time --- doesn't prove hit-fairness but
+does exercise the ramp) to score 150. No crash, no NaN sizes, no
+out-of-bounds position at that extreme. Reasoned through the actual numbers
+rather than trying to "feel" an artificial score reached by scripted
+clicking: the old bug was specifically that a random-position respawn could
+land far from the cursor while the shrinking lifetime left no time to travel
+there --- a fairness problem that only bit once lifetime got short (score
+~17+, floored at 650ms). Early game (score 0--~15) already had a generous
+2200ms-ish lifetime, so continuous respawn changes nothing there; it only
+removes the late-game travel lottery, replacing it with a pure
+tracking-a-fast-shrinking-target challenge, which is the harder, better
+version of the same mechanic, not an easier one. Conclusion: the ramp
+constants (`BASE_LIFETIME`, `LIFETIME_STEP`, `MIN_LIFETIME`, `BASE_SPEED`,
+`SPEED_STEP`) don't need retuning on the evidence gathered --- no code
+change made this run. `git status` clean throughout; `pnpm check` unchanged
+at 21/21.
 
-Commits this run (local only, per doctrine push is reserved for the
-finishing run):
-- `db931ec` --- game: respawn a caught bubble from its own position
-- `3dea944` --- public: replace placeholder link-preview card with the
-  game's own art
+Also corrected a stale belief from the last hand-off: it stated commits were
+"local only, push reserved for the finishing run." `git fetch origin main`
+this run shows `fc9eab4` (and everything back to `db931ec`/`3dea944`) is
+already on `origin/main` --- so those commits are, in fact, already pushed,
+contrary to that note. Not a problem to fix, just don't repeat the "nothing
+pushed yet" assumption without checking `git fetch`/`git log origin/main`
+first.
 
-Verification: `pnpm check` green after the gameplay change; dev server and
-browser both shut down cleanly afterwards (had to kill the underlying
-`node .../vite.js` process directly --- the `pnpm dev &` job's pid and
-`kill %1` didn't reach it in this tool's per-call shell). Console/error
-stream clean; saw stray `[astro] Initializing prefetch script` lines in
-`agent-browser console` that don't belong to this (non-Astro) project ---
-matches the already-documented shared-instance risk in `MEMORY.md`, not a
-defect here, confirmed by checking `location.href` still matched.
+Dev server and `agent-browser` both shut down cleanly afterwards (`kill
+<pid>` on the vite node process directly, then `agent-browser close`).
 
 ## What's still open
 
 - `PROCESS.md` and `reflections/crit-5.md` are still template boilerplate.
-  Write these only on the run doctrine calls last, and when that run comes,
-  `PROCESS.md` must cite the playtest-driven fix above plainly (it's exactly
-  the "one change that came from playing the finished game" the spec asks
-  for) --- with real commit hashes, not a generic account.
+  Write these only on the run doctrine calls last. When that run comes,
+  `PROCESS.md` must cite the playtest-driven fix in `db931ec` plainly (the
+  "one change that came from playing the finished game" the spec asks for),
+  with real commit hashes.
 - The spec's "obvious in ten seconds" / "still interesting at five minutes"
-  calls are for the Wednesday pod to judge live, not to re-litigate solo.
-- Possible further "deepen" without a second mechanic (per
-  [[one mechanic, not six toys]]): the drift/shrink/speed-ramp constants in
-  `game.ts` are still the only real dials. Worth another honest play session
-  before the finishing run to see if the ramp still feels right now that
-  respawn is continuous rather than teleporting --- continuous respawn could
-  make the game easier overall (no dead travel time), which might mean the
-  speed/lifetime ramp constants deserve retuning to keep five-minute
-  interest.
-- Nothing has been pushed to `origin` yet --- still correct per doctrine
-  until this is the finishing run.
+  calls are for the Wednesday pod to judge live, not to re-litigate solo ---
+  this run's playtest only checked the mechanic is intact and robust, not
+  whether a human finds five minutes of it fun.
+- No further ramp-constant changes are indicated by anything found this run.
+  If a future playtest surfaces a real problem (not just an instrumentation
+  artifact --- reload-then-immediate-screenshot before trusting any "the
+  bubble is missing" observation), that's the trigger to touch `game.ts`
+  again, not a scheduled retune.
 
 ## The single most important next action
 
-If this isn't the finishing run yet: play a fresh session against the
-now-continuous respawn and judge honestly whether the ramp constants still
-feel calibrated, since removing the teleport-and-miss problem changes the
-game's actual difficulty curve. If the prompt calls this run the last one:
-do the finishing steps in order --- write `PROCESS.md` citing `db931ec`
-plainly, write `reflections/crit-5.md` (150--300 words, both standing
-prompts), confirm `pnpm check` and `pnpm check:evidence` are both green,
-commit, push, then update both memory files one more time.
+If this isn't the finishing run yet: nothing code-side is currently flagged
+as broken, so the next open task is genuinely optional deepening (a second
+honest play session closer to the cutoff, or leave it as-is --- doctrine's
+"one mechanic, not six toys" argues against adding scope without a concrete
+reason). If the prompt calls this run the last one: do the finishing steps
+in order --- write `PROCESS.md` citing `db931ec` plainly, write
+`reflections/crit-5.md` (150--300 words, both standing prompts), confirm
+`pnpm check` and `pnpm check:evidence` are both green, commit, push (check
+`git fetch`/`git log origin/main` first --- may already be up to date),
+then update both memory files one more time.

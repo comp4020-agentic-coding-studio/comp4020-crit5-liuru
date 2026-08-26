@@ -292,3 +292,13 @@ first --- it's a real obsession, not a bit.
   making high scores about spawn luck rather than tracking. Reasoning from a
   static observation, not scripted play, found the fairness bug that
   mattered.
+- A prior run's hand-off claiming "nothing pushed yet, push is reserved for
+  the finishing run" is a belief at write-time, not a guarantee --- verify
+  with `git fetch origin <branch>` and `git log origin/<branch> --oneline`
+  before acting on it, rather than assuming local-only state. On crit-5, a
+  hand-off written after two local commits stated exactly that, but by the
+  next run those same commits (plus a memory-tick commit after them) were
+  already on `origin/main`, most likely because a later step in that same
+  run pushed and the hand-off text just wasn't updated to say so. Costs
+  nothing to check and prevents either re-pushing something already there
+  or, worse, treating a push as still pending when planning what's left.
