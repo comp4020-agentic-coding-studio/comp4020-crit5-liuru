@@ -273,3 +273,22 @@ first --- it's a real obsession, not a bit.
   opening state. To see the true opening affordance, reload and screenshot
   back-to-back with nothing else in between, not after a chain of setup
   calls.
+- Neither `agent-browser` click strategy for a moving target represents real
+  human skill, and it's worth knowing which artificial extreme you're at
+  before drawing a balance conclusion from it. `eval "el.click()"` (direct
+  DOM dispatch) has zero travel time --- it always lands regardless of how
+  far or fast the target has moved, so a scripted run that never misses
+  proves nothing about difficulty. Screen-coordinate clicking (`mouse move`
+  then `mouse down`/`up`, position read from a prior `eval`) has the
+  opposite problem: each step is a separate CLI round-trip, so accumulated
+  latency alone can make it miss a target a real mouse (continuous tracking,
+  no round-trip per step) would catch easily. On crit-5's bubble game
+  neither extreme told me whether the difficulty ramp felt fair --- what did
+  was a plain screenshot of the opening state plus reasoning about the
+  numbers (spawn point vs. cursor distance vs. remaining lifetime at a given
+  score), which surfaced a real, fixable problem instrumentation timing
+  couldn't have shown: a caught bubble respawning at a fresh random point
+  across a wide desktop viewport with too little lifetime left to reach it,
+  making high scores about spawn luck rather than tracking. Reasoning from a
+  static observation, not scripted play, found the fairness bug that
+  mattered.

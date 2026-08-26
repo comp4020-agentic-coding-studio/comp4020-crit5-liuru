@@ -1,89 +1,83 @@
 # Hand-off
 
-## crit5-game: built and verified, not yet finished (this is not the last run)
+## crit5-game: playtest-driven fix landed, still not the finishing run
 
-`comp4020-crit5-liuru`, brief fetched fresh from
-`crits/05-game.json`: build a tiny browser game, one mechanic usually
-enough, obvious in ten seconds, still interesting at five minutes, no
-tutorial anywhere (no modal, no how-to-play page, nothing in the README
-standing in for either), a wrong move possible and play ends somewhere, one
-rule under a focused automated test, played at both marking viewports. 166.5h
-to cutoff at the top of this run, so per doctrine this is plan/build/deepen,
-not finish --- no `PROCESS.md` or `reflections/crit-5.md` yet, and nothing
-pushed to `origin` (doctrine reserves push for the finishing-steps run).
+`comp4020-crit5-liuru`, 160.5h to cutoff at the top of this run --- still
+plan/build/deepen per doctrine, not finish. Continuing from the bubble game
+built last run (see git log for the full build).
 
-Repo started from the template's default page (no prior work: one commit,
-"Initial commit"). Built a single-screen game, themed on 泡 (bubble, one of
-Tang Yin's six as-ifs, continuing [[the running theme]]): a soap-bubble
-drifts inside the play area and visually shrinks toward zero as its lifetime
-runs out; clicking it before then scores a point and spawns a faster,
-shorter-lived one; missing it pops the bubble, flashes that round's score
-centered on screen, then auto-restarts from zero after ~1.1s --- no button,
-no text telling you what happened, the visual pop + flash + fresh bubble is
-the whole feedback loop. Game logic is a DOM-free `Game` class in `game.ts`
-(update/catch/restart, normalized 0..1 coordinates) so the one required rule
---- a bubble not caught before its lifetime elapses ends the round --- has a
-focused test in `spec/game.test.ts`, independent of real timers/rendering.
-`main.ts` just wires that class to the DOM via `requestAnimationFrame`.
+This run did the one thing the previous hand-off flagged as still open: play
+the actual game and let that change something. Started the dev server,
+opened it in `agent-browser`, confirmed the tab really was mine, then played
+several ways --- rapid `el.click()` runs (never missed, proved nothing about
+difficulty since it has zero travel time), then real screen-coordinate
+clicks (missed constantly, because each `mouse move`/`mouse down`/`mouse up`
+step is its own CLI round-trip with more latency than a real hand). Neither
+extreme is a fair proxy for a human, and this is now written up in
+`MEMORY.md`. What actually surfaced a real problem was a plain screenshot of
+the 1920x1080 opening state plus doing the arithmetic: a caught bubble
+respawned at a fresh random point anywhere on a wide stage, while its
+lifetime kept shrinking with score --- at higher scores there wasn't enough
+time left to travel across the stage to a random spawn, so a high score
+depended on spawn-proximity luck rather than tracking skill. Fixed in
+`game.ts`'s `spawn()`: a caught bubble now continues from the position it
+was caught at (`catch()` passes `{x: this.bubble.x, y: this.bubble.y}` as
+the new one's origin) instead of teleporting; initial spawn and `restart()`
+still pick a fresh random point, since there's no "previous" position to
+continue from there. Confirmed with `eval` that a bubble's position is
+identical immediately before and after a catch. `pnpm check` stayed
+21/21 green throughout (the existing tests exercise score/status/best, not
+spawn position, so nothing needed updating).
 
-Commit: `8da0d75` (local; not yet pushed) --- "game: a bubble that drifts,
-shrinks and pops if you miss it".
+Also closed the other open item: `public/card.png` was still the starter's
+"Replace this card" placeholder. Rendered a real one at the card's own
+1200x630 using the same background gradient and bubble glow as the live
+page (built as a standalone HTML file, screenshotted with `agent-browser`
+at that exact viewport, no scaling needed) and committed it over the
+placeholder.
 
-Verification this run:
-- `pnpm check` (tsc, vite build, vitest): 21/21 green.
-- Hit one real TS strictness issue (not a memory-worthy generalizable
-  lesson, just noted here): narrowing `game.status === "playing"` across a
-  `game.update(dt)` call and then re-checking `=== "over"` in a nested `if`
-  made `tsc` treat the second check as comparing disjoint literals. Fixed by
-  reading `game.status` into a plain `boolean` local instead of relying on
-  narrowing surviving the method call.
-- Dev server up, `agent-browser` opened, confirmed `location.href` matched
-  before trusting anything (this container's browser has drifted to another
-  session's tab before). Found and worked around two timing traps specific
-  to driving a live game loop through the CLI --- both now in `MEMORY.md`:
-  a CDP click on a *moving* button can miss even when the selector and
-  command are right, and real wall-clock time during unrelated setup calls
-  can already finish/reset a short round before the first screenshot.
-  Confirmed the actual click handler and scoring work via a direct
-  `el.click()` eval once those were understood.
-- Screenshotted at both marking viewports (1920x1080, 390x844): bubble
-  renders clearly, glowing and obviously clickable, no text needed. Watched
-  the full cycle at desktop viewport: fresh bubble --- catch scores ---
-  round times out --- score flashes centered, bubble pops --- auto-restarts
-  clean at zero.
-- Console/error stream clean beyond normal vite HMR noise. Dev server and
-  browser both shut down afterwards; confirmed no stray vite process left
-  running.
+Commits this run (local only, per doctrine push is reserved for the
+finishing run):
+- `db931ec` --- game: respawn a caught bubble from its own position
+- `3dea944` --- public: replace placeholder link-preview card with the
+  game's own art
+
+Verification: `pnpm check` green after the gameplay change; dev server and
+browser both shut down cleanly afterwards (had to kill the underlying
+`node .../vite.js` process directly --- the `pnpm dev &` job's pid and
+`kill %1` didn't reach it in this tool's per-call shell). Console/error
+stream clean; saw stray `[astro] Initializing prefetch script` lines in
+`agent-browser console` that don't belong to this (non-Astro) project ---
+matches the already-documented shared-instance risk in `MEMORY.md`, not a
+defect here, confirmed by checking `location.href` still matched.
 
 ## What's still open
 
-- The spec's no-tutorial rule and "still interesting at five minutes" and
-  "a stranger reaches an ending inside five minutes" are judged by the pod
-  playing it cold at the Wednesday crit, same as crit-4 --- not something to
-  re-litigate solo.
-- The spec explicitly wants "one change you made came from playing the
-  finished game rather than reading its code" --- nothing yet in this run
-  qualifies (the timing-trap discoveries were testing-methodology fixes, not
-  a change to the game itself from a felt playtest reaction). A later run
-  should actually play several rounds, form an opinion (does the shrink rate
-  read clearly as a countdown? is the speed ramp too gentle/harsh? does the
-  1.1s restart delay feel right, or does it drag?), change one constant or
-  behaviour because of that feel, and cite it plainly in `PROCESS.md`.
-- Possible depth to consider without adding a second mechanic (per
+- `PROCESS.md` and `reflections/crit-5.md` are still template boilerplate.
+  Write these only on the run doctrine calls last, and when that run comes,
+  `PROCESS.md` must cite the playtest-driven fix above plainly (it's exactly
+  the "one change that came from playing the finished game" the spec asks
+  for) --- with real commit hashes, not a generic account.
+- The spec's "obvious in ten seconds" / "still interesting at five minutes"
+  calls are for the Wednesday pod to judge live, not to re-litigate solo.
+- Possible further "deepen" without a second mechanic (per
   [[one mechanic, not six toys]]): the drift/shrink/speed-ramp constants in
-  `game.ts` are the only real dials --- tuning those, not adding new game
-  objects, is the right kind of "deepen."
-- `public/card.png` is still the template placeholder; the CLAUDE.md here
-  says to replace it and the description meta before shipping. Description
-  meta is already replaced; the card image itself is not.
-- `PROCESS.md` and `reflections/crit-5.md` are both still template
-  boilerplate --- write these only on the run doctrine calls last.
+  `game.ts` are still the only real dials. Worth another honest play session
+  before the finishing run to see if the ramp still feels right now that
+  respawn is continuous rather than teleporting --- continuous respawn could
+  make the game easier overall (no dead travel time), which might mean the
+  speed/lifetime ramp constants deserve retuning to keep five-minute
+  interest.
+- Nothing has been pushed to `origin` yet --- still correct per doctrine
+  until this is the finishing run.
 
 ## The single most important next action
 
-Play the actual game for real (several rounds, both viewports) and let that
-play change one concrete thing in `game.ts` --- that's the one spec
-requirement this run didn't touch. If a later run is a different
-deliverable entirely, orient from that repo's own brief and history instead;
-this file is shared across all deliverables and gets overwritten by whichever
-repo a run touches last.
+If this isn't the finishing run yet: play a fresh session against the
+now-continuous respawn and judge honestly whether the ramp constants still
+feel calibrated, since removing the teleport-and-miss problem changes the
+game's actual difficulty curve. If the prompt calls this run the last one:
+do the finishing steps in order --- write `PROCESS.md` citing `db931ec`
+plainly, write `reflections/crit-5.md` (150--300 words, both standing
+prompts), confirm `pnpm check` and `pnpm check:evidence` are both green,
+commit, push, then update both memory files one more time.
