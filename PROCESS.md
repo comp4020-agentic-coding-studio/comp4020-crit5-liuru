@@ -1,61 +1,60 @@
 # Process overview
 
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-A reading-guide to how the work came together --- a map to your process, not an
-essay about it. Markers read this file and follow its citations; they don't
-trawl the repo for evidence you didn't point at, so if a moment mattered, cite
-it.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and its
-[word counts](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#word-counts)
-cover every deliverable.
-
-## What I built
-
-One paragraph: the thing, and the idea behind it.
+A single bubble drifts inside a bounded stage, shrinking toward a fixed
+lifetime as it goes. Click it before it disappears and it scores a point, then
+respawns faster and shorter-lived from wherever it was just caught; miss it and
+it pops, flashes the round's score, and restarts from zero. There is no
+how-to-play text anywhere — the bubble itself, alone on an otherwise empty
+stage, is the whole affordance. One mechanic (catch it in time), one escalating
+knob (speed up, lifetime down as score rises) is meant to be the entire game:
+easy to read in the first three seconds, harder to keep up with the longer a
+round runs.
 
 ## The moments that mattered
 
-Three or four for an assignment; fewer is fine for a weekly prototype. Keep the
-list short so each moment has room to do all four jobs:
+1. **Deciding where the one required rule lived.** The spec asks for a rule
+   under "a focused automated test" — testing a round's win/loss condition
+   meant it couldn't live tangled up in DOM/`requestAnimationFrame` code.
+   `game.ts` is a plain, DOM-free class (`Game`, with `update`/`catch`/
+   `restart`) that `main.ts` only renders and drives; `spec/game.test.ts` tests
+   "a missed bubble ends the round, a caught one keeps it going" directly
+   against that class, no browser needed. Building the logic this way from the
+   start, rather than retrofitting a test around DOM state afterwards, is what
+   made the rule testable at all.
+   [`8da0d75`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-liuru/commit/8da0d75)
 
-1. **what happened** --- the problem, or the thing that went wrong
-2. **what you did instead of the obvious thing** --- the call you made, and why
-   it beat the obvious one
-3. **how you knew it was right** --- the check you ran, the viewport you looked
-   at, what you read before accepting the diff
-4. **the citation** --- a commit or commit range, a `CLAUDE.md` change, a check
-   that went from red to green, a prompt paired with the commit it produced
+2. **The playtesting-driven fix, not a code-review one.** Playing several
+   rounds through to a high score surfaced a fairness problem no amount of
+   reading the code would have: a caught bubble respawned at a fresh random
+   point across the whole stage, but the lifetime that comes with a high score
+   is short enough that a spawn on the far side of a wide desktop viewport
+   left no real time to reach it. A high score was measuring spawn luck, not
+   tracking skill. The fix makes the next bubble continue from wherever the
+   last one was caught, so distance-to-target stays roughly constant as the
+   game speeds up instead of growing with stage size at exactly the moment
+   there's least time to spare. This is the change the spec means by "one
+   change driven by playtesting rather than code review" — nothing about it
+   was visible from `game.ts` alone until an actual round exposed it.
+   [`db931ec`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-liuru/commit/db931ec)
 
-Jobs 2 and 3 are the ones the repo can't tell a reader on its own, so they're
-where the marks are. The strongest moments are the ones where a correction
-landed in the **harness** --- the standards and checks your work has to satisfy
---- rather than in a retry: a rule added to `CLAUDE.md`, a check wired up, an
-attempt thrown away. Retrying until it passes is the routine case, and changing
-what the work runs against is the skilled one.
+3. **Checking modality, not just difficulty.** Once the mechanic and its ramp
+   held up under repeated mouse-click playtesting, the open question was
+   whether "no tutorial" also held for a player who never touches a mouse. The
+   bubble element is a real `<button>` with no bespoke keydown/touch handling
+   in `main.ts`, so tabbing to it and pressing Enter or Space scores a point
+   for free from native button semantics, and a touch-equivalent click on the
+   390×844 marking viewport works the same way. Confirming this needed no code
+   change — it confirmed the opening choice to use a plain `<button>` rather
+   than a styled `<div>` was the one paying off, not a gap to patch.
 
-Cite each moment as a link whose text is the commit hash or range and whose
-target is this repo's commit or compare URL, so a reader clicks straight to the
-evidence:
+## What stayed deliberately unbuilt
 
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
-
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
-
-> the prompt, verbatim
-
-Screenshots are welcome where one carries the verification better than a
-sentence does. Commit the file to this repo and link it with a **relative**
-path, which is what makes it render on GitHub: `![alt text](docs/before.png)`.
-Images don't count towards the word count and don't replace the citation.
+The brief invites "two mechanics that interact" as the harder, better move;
+this stayed at one on purpose. The escalating speed/lifetime ramp is the
+existing mechanic's own difficulty curve, not a second mechanic, and stacking
+a second toy on top risked diluting the ten-second read the no-tutorial rule
+asks for. Whether the single mechanic still holds attention for the full five
+minutes is a crit-floor question, not one a solo playtest run can settle.
 
 ## Before you ship
 
