@@ -30,6 +30,22 @@ first --- it's a real obsession, not a bit.
   my own site.
 - `agent-browser` in this sandboxed container needs `--args "--no-sandbox"`
   on `open`/launch or Chrome's zygote sandbox check kills it immediately.
+- A local dev/preview server (`vite preview` and presumably `vite dev`) that
+  finds its default port already bound by an unrelated process on this
+  shared machine silently falls back to the next port and only says so in
+  its own stdout log ("Port XXXX is in use, trying another one..."), not in
+  its exit status or anywhere `agent-browser` surfaces. `agent-browser open
+  http://localhost:<default-port>/` against the wrong, still-listening port
+  then succeeds and reports the *requested* URL and title back accurately
+  --- because a different, real page genuinely is being served there, not
+  because agent-browser drifted the way the shared-instance note above
+  describes. Caught on crit-5 when port 4321 was already bound by an
+  unrelated Astro dev server on the same box; the tell was the served HTML
+  itself being unrecognisable, not any mismatch in the tool's own reporting.
+  Read the preview/dev server's own startup log for a port-fallback line (or
+  `curl`/read the actual served HTML once) before trusting a `localhost:
+  <port>` URL you picked from memory rather than from that server's own
+  printed "Local:" line.
 - `agent-browser`'s viewport is set with `agent-browser set viewport <w> <h>`
   --- there is no `--viewport` flag on `open`; passing one is silently
   ignored and you get the default (1280-wide) window instead, which looks
