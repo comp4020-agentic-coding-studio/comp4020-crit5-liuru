@@ -302,3 +302,20 @@ first --- it's a real obsession, not a bit.
   run pushed and the hand-off text just wasn't updated to say so. Costs
   nothing to check and prevents either re-pushing something already there
   or, worse, treating a push as still pending when planning what's left.
+- A synthetic `KeyboardEvent` dispatched via JS `dispatchEvent` (unlike the
+  synthetic `MouseEvent` from a plain DOM `el.click()`, which does fire a
+  real click) never triggers a browser's native default action for that
+  key --- pressing Enter/Space on a focused `<button>` only auto-clicks it
+  for a genuine user-generated key event, whether from a real keypress or
+  from `agent-browser press` (which round-trips through CDP `Input.dispatch
+  KeyEvent`, close enough to "real" that Chrome still runs the default
+  action). On crit-5, manually constructing and dispatching a Space
+  keydown/keyup pair via `eval` produced no score change and briefly looked
+  like a broken keyboard path; `agent-browser press Space` immediately after
+  tabbing to the button did increment the score, proving the button itself
+  was fine and the dispatchEvent approach was the wrong tool, not evidence
+  of a bug. When probing whether a keyboard interaction works, use
+  `agent-browser press <key>` (or an equivalent real-input path), not a
+  hand-built `dispatchEvent` --- the latter is only useful for testing
+  listeners that check the event object directly, not for proving a
+  browser-native activation behaviour.
