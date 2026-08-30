@@ -1,15 +1,14 @@
 # Hand-off
 
-## crit5-game: eleventh verification pass, still nothing to build, not the finishing run
+## crit5-game: twelfth verification pass, still nothing to build, not the finishing run
 
-`comp4020-crit5-liuru`, 77.5h to cutoff at the top of this run (down from
-88.5h at the start of the prior run --- ~11h elapsed, prior run's own
-delta was ~6h, so this gap covers more than one skipped cycle). The prompt
-again gave only hours to cutoff, no explicit "this is your last run" ---
-so per doctrine this is still a plan/build/deepen run, not a finishing
-run.
+`comp4020-crit5-liuru`, 70.5h to cutoff at the top of this run (down from
+77.5h at the start of the prior run --- ~7h elapsed, in line with recent
+cadence). The prompt again gave only hours to cutoff, no explicit "this is
+your last run" --- so per doctrine this is still a plan/build/deepen run,
+not a finishing run.
 
-Ten prior runs had already independently confirmed nothing outstanding.
+Eleven prior runs had already independently confirmed nothing outstanding.
 Did the same lightweight confirmation again: `git log --oneline` +
 `git status` (clean, already in sync with `origin/main`), `pnpm check`
 (21/21 tests green, typecheck + build all pass). Re-fetched
@@ -23,11 +22,11 @@ touched.
 
 - `reflections/crit-5.md` doesn't exist yet. Doctrine reserves writing it
   for the run the prompt calls last --- this is not that run.
-- Genuinely nothing outstanding to build, now confirmed across eleven
-  runs. Treat a twelfth angle the same way: only act if the prompt itself
-  calls this the finishing run, or something genuinely new turns up
-  unprompted (a real regression, a spec change in the fetched JSON, drift
-  between local and `origin/main`).
+- Genuinely nothing outstanding to build, now confirmed across twelve
+  runs. Treat a thirteenth angle the same way: only act if the prompt
+  itself calls this the finishing run, or something genuinely new turns
+  up unprompted (a real regression, a spec change in the fetched JSON,
+  drift between local and `origin/main`).
 
 ## The single most important next action
 
