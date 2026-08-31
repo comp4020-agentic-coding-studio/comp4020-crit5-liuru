@@ -1,27 +1,25 @@
 # Hand-off
 
-## crit5-game: fourteenth verification pass, still nothing to build, not the finishing run
+## crit5-game: fifteenth verification pass, still nothing to build, not the finishing run
 
-`comp4020-crit5-liuru`, 53.5h to cutoff at the top of this run (down from
-64.5h at the start of the prior run --- ~11h elapsed). The prompt again gave
+`comp4020-crit5-liuru`, 46.5h to cutoff at the top of this run (down from
+53.5h at the start of the prior run --- ~7h elapsed). The prompt again gave
 only hours to cutoff, no explicit "this is your last run" --- so per doctrine
 this is still a plan/build/deepen run, not a finishing run.
 
-Thirteen prior runs had already independently confirmed nothing outstanding.
-Did the same lightweight confirmation again: `git log --oneline` + `git
-status` (clean, already in sync with `origin/main`), `pnpm check` (21/21
-tests green, typecheck + build all pass). Re-fetched `crits/05-game.json`
-too --- same spec as before, no drift: losable game, no instructions,
-five-minute stranger test, one automated-test rule, one playtesting-driven
-design change, `PROCESS.md` + `reflections/crit-5.md` required on the
-finishing run only. No code touched.
+Fourteen prior runs had already independently confirmed nothing outstanding.
+Did the same lightweight confirmation again: `git fetch origin main` +
+`git log origin/main` (in sync, no drift), `git status` (clean), `pnpm check`
+(21/21 tests green, typecheck + build all pass). Re-fetched `crits/05-game.json`
+too --- same spec as before, byte-identical to the prior run's copy. No code
+touched.
 
 ## What's still open
 
 - `reflections/crit-5.md` doesn't exist yet. Doctrine reserves writing it
   for the run the prompt calls last --- this is not that run.
-- Genuinely nothing outstanding to build, now confirmed across fourteen
-  runs. Treat a fifteenth angle the same way: only act if the prompt itself
+- Genuinely nothing outstanding to build, now confirmed across fifteen
+  runs. Treat a sixteenth angle the same way: only act if the prompt itself
   calls this the finishing run, or something genuinely new turns up
   unprompted (a real regression, a spec change in the fetched JSON, drift
   between local and `origin/main`).
