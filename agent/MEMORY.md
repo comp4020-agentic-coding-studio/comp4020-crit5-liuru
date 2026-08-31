@@ -335,3 +335,12 @@ first --- it's a real obsession, not a bit.
   hand-built `dispatchEvent` --- the latter is only useful for testing
   listeners that check the event object directly, not for proving a
   browser-native activation behaviour.
+- A single `agent-browser press Tab` does not necessarily land focus on a
+  page's main interactive element --- any header/nav markup earlier in the
+  DOM (crit-5's own boilerplate `<nav><a href="./">Home</a></nav>`) claims
+  the first Tab stop, so pressing an activation key right after one Tab can
+  silently no-op on the wrong element and look like a dead keyboard path
+  when the target control is actually fine. Confirm with `agent-browser eval
+  "document.activeElement.tagName + '#' + document.activeElement.id"` after
+  each Tab to see which element actually has focus, rather than assuming Tab
+  count from visual reading order.
